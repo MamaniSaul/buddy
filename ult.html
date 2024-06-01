@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulación del Sistema Buddy</title>
+<style>
+  .bloque {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 1px solid black;
+    margin: 5px;
+    text-align: center;
+    line-height: 50px;
+    position: relative;
+  }
+  .ocupado {
+    background-color: lightblue;
+  }
+  .bloque::before {
+    content: attr(data-size) ' KB';
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 12px;
+    color: black;
+    padding: 2px;
+  }
+</style>
+</head>
+<body>
+<h1>Simulación del Sistema Buddy</h1>
+<div id="memoria"></div>
+<input type="number" id="Tamaño de asignación" placeholder="Introduce el tamaño en KB" min="1" max="128">
+<button onclick="asignarMemoria()">Asignar Memoria</button>
+<button onclick="liberarMemoria()">Liberar Memoria</button>
+
+<script>
+  // Representación de bloques de memoria
+  let bloquesMemoria = [];
+
+  // Inicializar bloques de memoria
+  const inicializarMemoria = () => {
+    const divMemoria = document.getElementById('memoria');
+    divMemoria.innerHTML = '';
+    bloquesMemoria = [{ size: 128, occupied: false }];
+    renderizarMemoria();
+  };
+
+  // Renderizar bloques de memoria
+  const renderizarMemoria = () => {
+    const divMemoria = document.getElementById('memoria');
+    divMemoria.innerHTML = '';
+    bloquesMemoria.forEach((bloque, index) => {
+      const bloqueDiv = document.createElement('div');
+      bloqueDiv.classList.add('bloque');
+      if (bloque.occupied) {
+        bloqueDiv.classList.add('ocupado');
+      }
+      bloqueDiv.setAttribute('data-size', bloque.size);
+      bloqueDiv.setAttribute('data-index', index);
+      divMemoria.appendChild(bloqueDiv);
+    });
+  };
+
+  // Asignar memoria
+  const asignarMemoria = () => {
+    const tamaño = parseInt(document.getElementById('Tamaño de asignación').value);
+    if (isNaN(tamaño) || tamaño < 1 || tamaño > 128) {
+      alert('Por favor, introduce un tamaño válido entre 1 y 128 KB');
+      return;
+    }
+
+    const index = encontrarBloque(tamaño);
+    if (index !== -1) {
+      dividirBloque(index, tamaño);
+      renderizarMemoria();
+    } else {
+      alert('No hay suficiente memoria para asignar');
+    }
+  };
+
+  // Encontrar un bloque libre que pueda contener el tamaño solicitado
+  const encontrarBloque = (tamaño) => {
+    return bloquesMemoria.findIndex(bloque => !bloque.occupied && bloque.size >= tamaño);
+  };
+
+  // Dividir un bloque en subbloques más pequeños
+  const dividirBloque = (index, tamaño) => {
+    while (bloquesMemoria[index].size / 2 >= tamaño) {
+      const nuevoTamaño = bloquesMemoria[index].size / 2;
+      bloquesMemoria[index].size = nuevoTamaño;
+      bloquesMemoria.splice(index + 1, 0, { size: nuevoTamaño, occupied: false });
+    }
+    bloquesMemoria[index].occupied = true;
+  };
+
+  // Liberar memoria
+  const liberarMemoria = () => {
+    const index = bloquesMemoria.findIndex(bloque => bloque.occupied);
+    if (index !== -1) {
+      bloquesMemoria[index].occupied = false;
+      fusionarBloques();
+      renderizarMemoria();
+    } else {
+      alert('No hay bloques ocupados para liberar.');
+    }
+  };
+
+  // Fusionar bloques adyacentes libres
+  const fusionarBloques = () => {
+    for (let i = 0; i < bloquesMemoria.length - 1; i++) {
+      if (!bloquesMemoria[i].occupied && !bloquesMemoria[i + 1].occupied && bloquesMemoria[i].size === bloquesMemoria[i + 1].size) {
+        bloquesMemoria[i].size *= 2;
+        bloquesMemoria.splice(i + 1, 1);
+        i--; // Re-evaluar el índice actual
+      }
+    }
+  };
+
+  // Inicializar bloques de memoria al cargar la página
+  window.onload = inicializarMemoria;
+</script>
+</body>
+</html>
